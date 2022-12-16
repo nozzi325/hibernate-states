@@ -88,7 +88,7 @@ class ContactServiceTest {
 
         //verify
         assertTrue(session.contains(contactBefore));
-        assertEquals(contactAfter,contactBefore);
+        assertFalse(contactBefore.getPhoneNumber().equals("contact_number_before"));
     }
 
     @Test

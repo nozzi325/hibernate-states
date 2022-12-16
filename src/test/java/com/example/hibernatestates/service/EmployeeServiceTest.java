@@ -109,7 +109,7 @@ class EmployeeServiceTest {
         employeeService.updateEmployee(employeeAfter,session);
 
         //verify
-        assertEquals(employeeBefore.getName(),employeeAfter.getName());
+        assertFalse(employeeBefore.getName().equals("Name_before"));
     }
 
     @Test

@@ -77,7 +77,7 @@ class ProjectServiceTest {
 
         //verify
         assertTrue(session.contains(projectBefore));
-        assertEquals(projectAfter,projectBefore);
+        assertFalse(projectBefore.getName().equals("project_name_before"));
     }
 
     @Test
