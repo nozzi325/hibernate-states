@@ -18,24 +18,22 @@ public class ProjectService {
     }
 
     public void updateProject(Project project, Session session){
-        if(session.find(Project.class, project.getId()) == null){
-           throw new RuntimeException("Project with id " + project.getId() + " not found");
+        if (this.getProjectById(project.getId(), session) != null){
+            session.merge(project);
         }
-        session.merge(project);
     }
 
     public void deleteProject(Project project, Session session){
-        if(session.find(Project.class, project.getId()) == null){
-            throw new RuntimeException("Project with id " + project.getId() + " not found");
+        if (this.getProjectById(project.getId(), session) != null){
+            session.remove(project);
         }
-        session.remove(project);
     }
 
     public Project getProjectById(Integer id, Session session){
-        Optional<Project> project = Optional.of(session.find(Project.class, id));
-        if (project.isEmpty()){
+        Project project = session.find(Project.class, id);
+        if (project == null){
             throw new RuntimeException("Project with id " + id + " not found");
         }
-        return project.get();
+        return project;
     }
 }
