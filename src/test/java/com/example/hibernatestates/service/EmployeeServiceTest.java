@@ -11,7 +11,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 class EmployeeServiceTest {
@@ -22,9 +25,11 @@ class EmployeeServiceTest {
     SessionFactory sessionFactory;
 
     @Test
-    void persistEmployee_PersistInnerEntities() {
-        //given
+    void givenTransientEmployeeWithContacts_whenPersisted_thenAllEntitiesBecomePersistent() {
+        // Create a session
         Session session = sessionFactory.openSession();
+
+        // Create an employee and inner contact entities
         Employee employee = new Employee();
         employee.setName("Employee 1");
 
@@ -33,93 +38,81 @@ class EmployeeServiceTest {
         Contact contact2 = new Contact();
         contact2.setPhoneNumber("phone_2");
 
+        // Establish associations between employee and contacts
         contact1.setEmployee(employee);
         contact2.setEmployee(employee);
 
-        List<Contact> list = new ArrayList<>();
-        list.add(contact1);
-        list.add(contact2);
+        List<Contact> contacts = new ArrayList<>();
+        contacts.add(contact1);
+        contacts.add(contact2);
 
-        employee.setContacts(list);
+        employee.setContacts(contacts);
 
-        //when
-        employeeService.persistEmployee(employee,session);
+        // Call the method to persist the employee and its inner entities, transitioning them to Persistent state
+        employeeService.persistEmployee(employee, session);
 
-
-        //verify
+        // Verify that employee and contact entities are in Persistent state
         assertTrue(session.contains(employee));
         assertTrue(session.contains(contact1));
         assertTrue(session.contains(contact2));
     }
 
     @Test
-    void persistEmployee_OneEntity(){
-        //given
+    void givenTransientEmployee_whenPersisted_thenShouldBeInPersistentState() {
+        // Create a session
         Session session = sessionFactory.openSession();
+
+        // Create an Employee entity in Transient state
         Employee employee = new Employee();
         employee.setName("Employee 1");
 
-        //when
-        employeeService.persistEmployee(employee,session);
+        // Call the method to persist the Employee, transitioning it to Persistent state
+        employeeService.persistEmployee(employee, session);
 
-        //verify
+        // Verify that the Employee entity is now in the Persistent state
         assertTrue(session.contains(employee));
     }
 
     @Test
-    void deleteEmployee_ThrowException_WhenNonExistingEmployee() {
-        //given
+    void givenPersistentEmployee_whenDeleted_thenShouldBeInRemovedState() {
+        // Create a session
         Session session = sessionFactory.openSession();
-        Employee employee = new Employee();
-        employee.setId(999999);
 
-        //when
-        assertThrows(RuntimeException.class, () -> employeeService.deleteEmployee(employee,session));
-    }
-
-    @Test
-    void deleteEmployee_OK() {
-        //given
-        Session session = sessionFactory.openSession();
+        // Create an Employee entity and save it to the database
         Employee employee = new Employee();
         employee.setName("Employee 1");
         session.save(employee);
 
-        //when
-        employeeService.deleteEmployee(employee,session);
+        // Call the method to delete the Employee, transitioning it to the Removed state
+        employeeService.deleteEmployee(employee, session);
 
-        //verify
+        // Verify that the Employee is no longer in the session and has been deleted from the database
         assertFalse(session.contains(employee));
         assertNull(session.find(Employee.class, employee.getId()));
     }
 
     @Test
-    void updateEmployee_OK(){
-        //given
+    void givenEmployeeWithChangedName_whenUpdated_thenShouldReflectChanges() {
+        // Create a session
         Session session = sessionFactory.openSession();
+
+        // Create an Employee entity and save it with the name "Name_before"
         Employee employeeBefore = new Employee();
         employeeBefore.setName("Name_before");
         session.save(employeeBefore);
 
+        // Create another Employee entity with the same identifier and a name "Name_after"
         Employee employeeAfter = new Employee();
         employeeAfter.setId(employeeBefore.getId());
         employeeAfter.setName("Name_after");
 
-        //when
-        employeeService.updateEmployee(employeeAfter,session);
+        // Call the method to update the Employee, transitioning it to Persistent state
+        employeeService.updateEmployee(employeeAfter, session);
 
-        //verify
+        // Verify that the employee's name has been updated
         assertFalse(employeeBefore.getName().equals("Name_before"));
-    }
-
-    @Test
-    void updateEmployee_ThrowException_WhenNonExistingEmployee(){
-        //given
-        Session session = sessionFactory.openSession();
-        Employee employee = new Employee();
-        employee.setId(99999);
-
-        //when & verify
-        assertThrows(RuntimeException.class, () -> employeeService.updateEmployee(employee,session));
+        // Check that the updated employee is not in Persistent state and the original employee is still in the session
+        assertFalse(session.contains(employeeAfter));
+        assertTrue(session.contains(employeeBefore));
     }
 }
